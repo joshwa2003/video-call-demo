@@ -12,3 +12,5 @@ install packages:
 run:
 
 nodemon
+
+run on http://localhost:3030/
