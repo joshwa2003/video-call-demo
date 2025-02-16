@@ -8,9 +8,11 @@ myVideo.muted = true;
 
 var peer = new Peer(undefined, {
   path: "/peerjs",
-  host: "/",
-  port: "3030",
+  host: "/",  // Change this to your Vercel domain if needed
+  port: "443", // Use 443 for secure connections
+  secure: true,
 });
+
 
 let myVideoStream;
 
