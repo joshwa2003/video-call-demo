@@ -2,7 +2,12 @@ const express = require("express");
 const app = express();
 const server = require("http").Server(app);
 const { v4: uuidv4 } = require("uuid");
-const io = require("socket.io")(server);
+const io = require("socket.io")(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
 // Peer
 
 const { ExpressPeerServer } = require("peer");
@@ -38,4 +43,4 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(process.env.PORT || 3030);
+server.listen(process.env.PORT || 3030, '0.0.0.0');
