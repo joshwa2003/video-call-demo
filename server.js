@@ -1,26 +1,23 @@
 const express = require("express");
 const app = express();
-const server = require("http").Server(app);
 const { v4: uuidv4 } = require("uuid");
-const io = require("socket.io")(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
-// Peer
-
+const http = require("http");
+const { Server } = require("socket.io");
 const { ExpressPeerServer } = require("peer");
-const peerServer = ExpressPeerServer(server, {
-  debug: true,
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: { origin: "*", methods: ["GET", "POST"] },
 });
+
+const peerServer = ExpressPeerServer(server, { debug: true });
 
 app.set("view engine", "ejs");
 app.use(express.static("public"));
 app.use("/peerjs", peerServer);
 
-app.get("/", (req, rsp) => {
-  rsp.redirect(`/${uuidv4()}`);
+app.get("/", (req, res) => {
+  res.redirect(`/${uuidv4()}`);
 });
 
 app.get("/:room", (req, res) => {
@@ -30,17 +27,22 @@ app.get("/:room", (req, res) => {
 io.on("connection", (socket) => {
   socket.on("join-room", (roomId, userId) => {
     socket.join(roomId);
-    socket.to(roomId).broadcast.emit("user-connected", userId);
 
+    // ✅ Notify others in the room
+    socket.to(roomId).emit("user-connected", userId);
+
+    // ✅ Handle messages inside the room
     socket.on("message", (message) => {
       io.to(roomId).emit("createMessage", message);
     });
 
-    // Handle user disconnection
+    // ✅ Notify others when user disconnects
     socket.on("disconnect", () => {
-      socket.to(roomId).broadcast.emit("user-disconnected", userId);
+      socket.to(roomId).emit("user-disconnected", userId);
     });
   });
 });
 
-server.listen(process.env.PORT || 3030, '0.0.0.0');
+server.listen(3030, () => {
+  console.log("Server running on http://localhost:3030");
+});
