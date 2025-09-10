@@ -3,84 +3,135 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HOME</title>
+    <title>Video Call - Meeting</title>
     <link
       rel="stylesheet"
       href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
     />
     <link rel="stylesheet" href="style.css" />
     <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.3.1/peerjs.min.js.map"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.3.1/peerjs.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
       const ROOM_ID = "<%= roomId %>";
     </script>
   </head>
   <body>
-    <div class="main">
-      <div class="main__left">
-        <div class="main__videos">
-          <div id="video-grid"></div>
+    <!-- Header -->
+    <header class="meeting-header">
+      <div class="meeting-info">
+        <div class="meeting-title">
+          <i class="fa fa-video-camera"></i>
+          <span>Video Call</span>
         </div>
-        <div class="main__controls">
-          <div class="main__controls_block">
-            <div
-              class="main__controls_button"
+        <div class="meeting-id">Meeting ID: <%= roomId.substring(0, 8) %>...</div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-container">
+      <div class="video-section">
+        <div class="video-area">
+          <!-- Desktop Video Grid -->
+          <div id="video-grid" class="video-grid"></div>
+          <div class="pagination-controls">
+            <button id="prevPage" class="pagination-button" title="Previous Page" disabled>
+              <i class="fa fa-chevron-left"></i>
+            </button>
+            <span id="pageIndicator" class="page-indicator">1 / 1</span>
+            <button id="nextPage" class="pagination-button" title="Next Page" disabled>
+              <i class="fa fa-chevron-right"></i>
+            </button>
+          </div>
+          
+          <!-- Mobile Video Layout -->
+          <div class="mobile-video-layout" style="display: none;">
+            <!-- Own Camera (Top Right) -->
+            <div class="own-camera-container">
+              <video id="ownCameraMobile" muted></video>
+            </div>
+            
+            <!-- Main Speaker (Center) -->
+            <div class="main-speaker-container">
+              <video id="mainSpeaker"></video>
+              <div class="no-speaker-message" style="display: flex; align-items: center; justify-content: center; color: #ffffff; font-size: 18px;">
+                <i class="fa fa-users" style="margin-right: 8px;"></i>
+                Waiting for participants...
+              </div>
+            </div>
+            
+            <!-- Other Participants (Bottom Scroll) -->
+            <div class="other-participants-container">
+              <div class="participants-scroll" id="participantsScroll">
+                <!-- Participant items will be added here dynamically -->
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Controls Bar -->
+        <div class="controls-bar">
+          <div class="controls-group">
+            <button
+              class="control-button"
               id="muteButton"
               onclick="muteUnmute()"
+              title="Mute/Unmute"
             >
               <i class="fa fa-microphone"></i>
-              <span>Mute</span>
-            </div>
-            <div
-              class="main__controls_button"
+            </button>
+            <button
+              class="control-button"
               id="playPauseVideo"
               onclick="playStop()"
+              title="Turn camera on/off"
             >
               <i class="fa fa-video-camera"></i>
-              <span>Pause Video</span>
-            </div>
+            </button>
           </div>
 
-          <div class="main__controls_block">
-            <!-- <div class="main__controls_button">
-              <i class="fa fa-shield"></i>
-              <span>Security</span>
-            </div> -->
-            <div class="main__controls_button" id="inviteButton">
+          <div class="controls-group">
+            <button class="control-button" id="inviteButton" title="Copy invite link">
               <i class="fa fa-user-plus"></i>
-              <span>Invite</span>
-            </div>
-            <div class="main__controls_button" id="chatButton">
+            </button>
+            <button class="control-button" id="chatButton" title="Toggle chat">
               <i class="fa fa-comment"></i>
-              <span>Chat</span>
-            </div>
+            </button>
           </div>
 
-          <div class="main__controls_block">
-            <div class="main__controls_button leaveMeeting" id="leave-meeting">
-              <i class="fa fa-times"></i>
-              <span class="">Leave Meeting</span>
-            </div>
+          <div class="controls-group">
+            <button class="control-button leave-button" id="leave-meeting" title="Leave meeting">
+              <i class="fa fa-phone"></i>
+            </button>
           </div>
         </div>
       </div>
-      <div class="main__right">
-        <div class="main__header">
-          <h6>Chat</h6>
+
+      <!-- Chat Panel -->
+      <aside class="chat-panel" id="chatPanel">
+        <div class="chat-header">
+          <h3>Chat</h3>
+          <button class="close-chat" id="closeChatButton">
+            <i class="fa fa-times"></i>
+          </button>
         </div>
-        <div class="main__chat__window" id="main__chat__window">
-          <ul class="messages" id="all_messages"></ul>
+        <div class="chat-messages" id="main__chat__window">
+          <ul class="messages-list" id="all_messages"></ul>
         </div>
-        <div class="main__message_container">
+        <div class="chat-input-container">
           <input
             type="text"
             id="chat_message"
-            placeholder="Type message here.."
+            placeholder="Type a message..."
+            class="chat-input"
           />
+          <button class="send-button" id="sendButton">
+            <i class="fa fa-paper-plane"></i>
+          </button>
         </div>
-      </div>
-    </div>
+      </aside>
+    </main>
+
     <script src="script.js"></script>
   </body>
 </html>

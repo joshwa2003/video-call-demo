@@ -49,12 +49,6 @@ navigator.mediaDevices
       removeVideoStream(userId);
     });
 
-    document.addEventListener("keydown", (e) => {
-      if (e.which === 13 && chatInputBox.value != "") {
-        socket.emit("message", chatInputBox.value);
-        chatInputBox.value = "";
-      }
-    });
 
     socket.on("createMessage", (msg) => {
       console.log(msg);
@@ -97,35 +91,301 @@ const connectToNewUser = (userId, streams) => {
   });
 };
 
+const videosPerPage = 9;
+let currentPage = 1;
+
+// Mobile layout variables
+let isMobileLayout = false;
+let mainSpeakerId = null;
+let participants = new Map();
+
+// Check if mobile layout should be used
+const checkMobileLayout = () => {
+  return window.innerWidth <= 768;
+};
+
+// Initialize layout based on screen size
+const initializeLayout = () => {
+  isMobileLayout = checkMobileLayout();
+  const mobileLayout = document.querySelector('.mobile-video-layout');
+  const desktopGrid = document.getElementById('video-grid');
+  const paginationControls = document.querySelector('.pagination-controls');
+  
+  if (isMobileLayout) {
+    mobileLayout.style.display = 'flex';
+    desktopGrid.style.display = 'none';
+    paginationControls.style.display = 'none';
+  } else {
+    mobileLayout.style.display = 'none';
+    desktopGrid.style.display = 'grid';
+    paginationControls.style.display = 'flex';
+  }
+};
+
+// Handle window resize
+window.addEventListener('resize', () => {
+  const wasMobile = isMobileLayout;
+  isMobileLayout = checkMobileLayout();
+  
+  if (wasMobile !== isMobileLayout) {
+    initializeLayout();
+    // Re-organize videos for new layout
+    reorganizeVideos();
+  }
+});
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', initializeLayout);
+
 const addVideoStream = (videoEl, stream, userId) => {
   videoEl.srcObject = stream;
-  videoEl.setAttribute("id", userId); // Set ID to userId for tracking
+  videoEl.setAttribute("id", userId);
+  videoEl.classList.add("video-participant");
   videoEl.addEventListener("loadedmetadata", () => {
     videoEl.play();
   });
 
-  videoGrid.append(videoEl);
-  let totalUsers = document.getElementsByTagName("video").length;
-  if (totalUsers > 1) {
-    for (let index = 0; index < totalUsers; index++) {
-      document.getElementsByTagName("video")[index].style.width =
-        100 / totalUsers + "%";
-    }
+  // Check if participant already exists to prevent duplicates
+  if (participants.has(userId)) {
+    console.log("Participant already exists:", userId);
+    return;
+  }
+
+  // Store participant info
+  participants.set(userId, { video: videoEl, stream: stream });
+
+  // For desktop view: Always use consistent sizing regardless of source device
+  if (isMobileLayout) {
+    addToMobileLayout(videoEl, userId, stream);
+  } else {
+    // Ensure consistent video properties for desktop view
+    videoEl.style.width = "100%";
+    videoEl.style.height = "90%";
+    videoEl.style.objectFit = "contain";
+    videoEl.style.borderRadius = "8px";
+    videoEl.style.backgroundColor = "#000000";
+    videoEl.style.transform = "scaleX(-1)";
+    videoEl.style.border = "2px solid #ffffff";
+    videoEl.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.15)";
+    
+    videoGrid.append(videoEl);
+    updateVideoPagination();
   }
 };
+
+const addToMobileLayout = (videoEl, userId, stream) => {
+  // If this is our own video, add to own camera container
+  if (userId === peer.id || videoEl.muted) {
+    const ownCameraMobile = document.getElementById('ownCameraMobile');
+    if (ownCameraMobile) {
+      ownCameraMobile.srcObject = stream;
+      ownCameraMobile.muted = true;
+      ownCameraMobile.addEventListener('loadedmetadata', () => {
+        ownCameraMobile.play();
+      });
+    }
+    return;
+  }
+
+  // If no main speaker, make this the main speaker
+  if (!mainSpeakerId) {
+    setMainSpeaker(userId, videoEl, stream);
+  } else {
+    // Add to participants scroll
+    addToParticipantsScroll(userId, videoEl, stream);
+  }
+};
+
+const setMainSpeaker = (userId, videoEl, stream) => {
+  mainSpeakerId = userId;
+  const mainSpeaker = document.getElementById('mainSpeaker');
+  const noSpeakerMessage = document.querySelector('.no-speaker-message');
+  
+  mainSpeaker.srcObject = stream;
+  mainSpeaker.style.display = 'block';
+  noSpeakerMessage.style.display = 'none';
+  
+  // Copy video properties
+  mainSpeaker.muted = videoEl.muted;
+  mainSpeaker.addEventListener('loadedmetadata', () => {
+    mainSpeaker.play();
+  });
+};
+
+const addToParticipantsScroll = (userId, videoEl, stream) => {
+  const participantsScroll = document.getElementById('participantsScroll');
+  
+  // Check if user already exists in participants scroll to prevent duplicates
+  const existingParticipant = document.querySelector(`[data-user-id="${userId}"]`);
+  if (existingParticipant) {
+    console.log("User already exists in participants scroll:", userId);
+    return;
+  }
+  
+  // Create participant item
+  const participantItem = document.createElement('div');
+  participantItem.className = 'participant-item';
+  participantItem.setAttribute('data-user-id', userId);
+  
+  // Clone video for participant scroll
+  const participantVideo = document.createElement('video');
+  participantVideo.srcObject = stream;
+  participantVideo.muted = true; // Mute in scroll view
+  participantVideo.addEventListener('loadedmetadata', () => {
+    participantVideo.play();
+  });
+  
+  // Add click handler to switch main speaker
+  participantItem.addEventListener('click', () => {
+    switchMainSpeaker(userId);
+  });
+  
+  participantItem.appendChild(participantVideo);
+  participantsScroll.appendChild(participantItem);
+};
+
+const switchMainSpeaker = (newSpeakerId) => {
+  if (newSpeakerId === mainSpeakerId) return;
+  
+  const currentMainParticipant = participants.get(mainSpeakerId);
+  const newMainParticipant = participants.get(newSpeakerId);
+  
+  if (currentMainParticipant && newMainParticipant) {
+    // Move current main speaker to scroll
+    addToParticipantsScroll(mainSpeakerId, currentMainParticipant.video, currentMainParticipant.stream);
+    
+    // Remove new main speaker from scroll
+    const participantItem = document.querySelector(`[data-user-id="${newSpeakerId}"]`);
+    if (participantItem) {
+      participantItem.remove();
+    }
+    
+    // Set new main speaker
+    setMainSpeaker(newSpeakerId, newMainParticipant.video, newMainParticipant.stream);
+  }
+};
+
+const reorganizeVideos = () => {
+  if (isMobileLayout) {
+    // Clear mobile layout
+    const participantsScroll = document.getElementById('participantsScroll');
+    participantsScroll.innerHTML = '';
+    const mainSpeaker = document.getElementById('mainSpeaker');
+    mainSpeaker.style.display = 'none';
+    document.querySelector('.no-speaker-message').style.display = 'flex';
+    mainSpeakerId = null;
+    
+    // Re-add all participants to mobile layout
+    participants.forEach((participant, userId) => {
+      addToMobileLayout(participant.video, userId, participant.stream);
+    });
+  } else {
+    // Move all videos back to desktop grid
+    videoGrid.innerHTML = '';
+    participants.forEach((participant, userId) => {
+      videoGrid.append(participant.video);
+    });
+    updateVideoPagination();
+  }
+};
+
+const updateVideoPagination = () => {
+  const videos = Array.from(document.querySelectorAll(".video-participant"));
+  const totalPages = Math.ceil(videos.length / videosPerPage);
+
+  // Update page indicator
+  const pageIndicator = document.getElementById("pageIndicator");
+  if (pageIndicator) {
+    pageIndicator.textContent = `${currentPage} / ${totalPages || 1}`;
+  }
+
+  // Enable/disable buttons
+  const prevButton = document.getElementById("prevPage");
+  const nextButton = document.getElementById("nextPage");
+  if (prevButton) prevButton.disabled = currentPage === 1;
+  if (nextButton) nextButton.disabled = currentPage === totalPages || totalPages === 0;
+
+  // Show only videos for current page
+  videos.forEach((video, index) => {
+    const start = (currentPage - 1) * videosPerPage;
+    const end = start + videosPerPage;
+    if (index >= start && index < end) {
+      video.style.display = "block";
+    } else {
+      video.style.display = "none";
+    }
+  });
+};
+
+// Pagination button handlers
+const goToPrevPage = () => {
+  if (currentPage > 1) {
+    currentPage--;
+    updateVideoPagination();
+  }
+};
+
+const goToNextPage = () => {
+  const videos = document.querySelectorAll(".video-participant");
+  const totalPages = Math.ceil(videos.length / videosPerPage);
+  if (currentPage < totalPages) {
+    currentPage++;
+    updateVideoPagination();
+  }
+};
+
+// Attach event listeners for pagination buttons
+document.addEventListener("DOMContentLoaded", () => {
+  const prevButton = document.getElementById("prevPage");
+  const nextButton = document.getElementById("nextPage");
+  if (prevButton) prevButton.addEventListener("click", goToPrevPage);
+  if (nextButton) nextButton.addEventListener("click", goToNextPage);
+});
 
 // Remove video stream when a user leaves
 const removeVideoStream = (userId) => {
   console.log("Removing video stream for user:", userId);
-  const videoEl = document.getElementById(userId);
-  if (videoEl) {
-    videoEl.remove();
-    let totalUsers = document.getElementsByTagName("video").length;
-    if (totalUsers > 1) {
-      for (let index = 0; index < totalUsers; index++) {
-        document.getElementsByTagName("video")[index].style.width =
-          100 / totalUsers + "%";
+  
+  // Remove from participants map
+  participants.delete(userId);
+  
+  if (isMobileLayout) {
+    // Handle mobile layout removal
+    if (userId === mainSpeakerId) {
+      // Find new main speaker
+      const remainingParticipants = Array.from(participants.keys()).filter(id => id !== peer.id);
+      if (remainingParticipants.length > 0) {
+        const newMainId = remainingParticipants[0];
+        const newMainParticipant = participants.get(newMainId);
+        
+        // Remove from scroll first
+        const participantItem = document.querySelector(`[data-user-id="${newMainId}"]`);
+        if (participantItem) {
+          participantItem.remove();
+        }
+        
+        setMainSpeaker(newMainId, newMainParticipant.video, newMainParticipant.stream);
+      } else {
+        // No participants left
+        const mainSpeaker = document.getElementById('mainSpeaker');
+        const noSpeakerMessage = document.querySelector('.no-speaker-message');
+        mainSpeaker.style.display = 'none';
+        noSpeakerMessage.style.display = 'flex';
+        mainSpeakerId = null;
       }
+    } else {
+      // Remove from participants scroll
+      const participantItem = document.querySelector(`[data-user-id="${userId}"]`);
+      if (participantItem) {
+        participantItem.remove();
+      }
+    }
+  } else {
+    // Handle desktop layout removal
+    const videoEl = document.getElementById(userId);
+    if (videoEl) {
+      videoEl.remove();
+      updateVideoPagination();
     }
   }
 };
@@ -153,38 +413,59 @@ const muteUnmute = () => {
 };
 
 const setPlayVideo = () => {
-  const html = `<i class="unmute fa fa-pause-circle"></i>
-  <span class="unmute">Resume Video</span>`;
-  document.getElementById("playPauseVideo").innerHTML = html;
+  const button = document.getElementById("playPauseVideo");
+  button.innerHTML = `<i class="fa fa-video-camera" style="opacity: 0.5;"></i>`;
+  button.classList.add("unmute");
+  button.title = "Turn camera on";
 };
 
 const setStopVideo = () => {
-  const html = `<i class=" fa fa-video-camera"></i>
-  <span class="">Pause Video</span>`;
-  document.getElementById("playPauseVideo").innerHTML = html;
+  const button = document.getElementById("playPauseVideo");
+  button.innerHTML = `<i class="fa fa-video-camera"></i>`;
+  button.classList.remove("unmute");
+  button.title = "Turn camera off";
 };
 
 const setUnmuteButton = () => {
-  const html = `<i class="unmute fa fa-microphone-slash"></i>
-  <span class="unmute">Unmute</span>`;
-  document.getElementById("muteButton").innerHTML = html;
+  const button = document.getElementById("muteButton");
+  button.innerHTML = `<i class="fa fa-microphone-slash"></i>`;
+  button.classList.add("unmute");
+  button.title = "Unmute";
 };
+
 const setMuteButton = () => {
-  const html = `<i class="fa fa-microphone"></i>
-  <span>Mute</span>`;
-  document.getElementById("muteButton").innerHTML = html;
+  const button = document.getElementById("muteButton");
+  button.innerHTML = `<i class="fa fa-microphone"></i>`;
+  button.classList.remove("unmute");
+  button.title = "Mute";
 };
 
 // Toggle Chat Box
 const toggleChat = () => {
-  const chatWindow = document.querySelector(".main__right");
-  const mainLeft = document.querySelector(".main__left");
-  if (chatWindow.style.display === "none") {
-    chatWindow.style.display = "flex";
-    mainLeft.style.flex = "0.8";
+  const chatPanel = document.getElementById("chatPanel");
+  const videoSection = document.querySelector(".video-section");
+  
+  if (chatPanel.classList.contains("open")) {
+    chatPanel.classList.remove("open");
   } else {
-    chatWindow.style.display = "none";
-    mainLeft.style.flex = "1";
+    chatPanel.classList.add("open");
+  }
+};
+
+// Close Chat
+const closeChat = () => {
+  const chatPanel = document.getElementById("chatPanel");
+  chatPanel.classList.remove("open");
+};
+
+// Send Message
+const sendMessage = () => {
+  const chatInput = document.getElementById("chat_message");
+  const message = chatInput.value.trim();
+  
+  if (message !== "") {
+    socket.emit("message", message);
+    chatInput.value = "";
   }
 };
 
@@ -192,7 +473,26 @@ const toggleChat = () => {
 const copyURL = () => {
   const url = window.location.href;
   navigator.clipboard.writeText(url).then(() => {
-    alert("URL copied to clipboard!");
+    // Create a simple notification
+    const notification = document.createElement("div");
+    notification.textContent = "Meeting link copied to clipboard!";
+    notification.style.cssText = `
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #202124;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      z-index: 1001;
+      font-size: 14px;
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+      document.body.removeChild(notification);
+    }, 3000);
   });
 };
 
@@ -204,6 +504,30 @@ const leaveMeeting = () => {
 };
 
 // Event Listeners
-document.getElementById("chatButton").addEventListener("click", toggleChat);
-document.getElementById("inviteButton").addEventListener("click", copyURL);
-document.getElementById("leave-meeting").addEventListener("click", leaveMeeting);
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("chatButton").addEventListener("click", toggleChat);
+  document.getElementById("inviteButton").addEventListener("click", copyURL);
+  document.getElementById("leave-meeting").addEventListener("click", leaveMeeting);
+  
+  // Close chat button
+  const closeChatButton = document.getElementById("closeChatButton");
+  if (closeChatButton) {
+    closeChatButton.addEventListener("click", closeChat);
+  }
+  
+  // Send button
+  const sendButton = document.getElementById("sendButton");
+  if (sendButton) {
+    sendButton.addEventListener("click", sendMessage);
+  }
+  
+  // Enter key for chat input
+  const chatInput = document.getElementById("chat_message");
+  if (chatInput) {
+    chatInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        sendMessage();
+      }
+    });
+  }
+});

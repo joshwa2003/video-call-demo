@@ -17,7 +17,12 @@ app.use(express.static("public"));
 app.use("/peerjs", peerServer);
 
 app.get("/", (req, res) => {
-  res.redirect(`/${uuidv4()}`);
+  res.render("landing");
+});
+
+// Optional: keep /landing route as alias
+app.get("/landing", (req, res) => {
+  res.render("landing");
 });
 
 app.get("/:room", (req, res) => {

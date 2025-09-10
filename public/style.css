@@ -1,122 +1,661 @@
-@import url("https://fonts.googleapis.com/css2?family=Roboto&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600&display=swap");
+
+/* Reset and Base Styles */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
+
 html,
 body {
   height: 100%;
-  font-family: "Roboto", sans-serif;
-}
-#video-grid {
-  display: flex;
-  justify-content: center;
-  height: 100%;
-  width: 100%;
-  align-items: center;
-  flex-wrap: wrap;
-  overflow-y: auto;
-}
-video {
-  display: block;
-  flex: 1;
-  object-fit: cover;
-  border: 5px solid #000;
-  max-width: 600px;
-  transform: scaleX(-1);
-}
-.main {
-  height: 100%;
-  display: flex;
-}
-.main__left {
-  flex: 0.8;
-  display: flex;
-  flex-direction: column;
-  transition: flex 0.3s ease-in-out;
-}
-.main__right {
-  flex: 0.2;
-  display: flex;
-  flex-direction: column;
-  background-color: #242324;
-  border-left: 1px solid #3d3d42;
-  transition: display 0.3s ease-in-out;
-}
-.main__videos {
-  flex-grow: 1;
-  background-color: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.main__controls {
-  display: flex;
-  background-color: #1c1e20;
-  color: #d2d2d2;
-  padding: 5px;
-  justify-content: space-between;
-}
-.main__controls_block {
-  display: flex;
-}
-.main__controls_button {
-  display: flex;
-  flex-direction: column;
-  cursor: pointer;
-  padding: 10px;
-  justify-content: center;
-  align-items: center;
-  min-width: 80px;
-  transition: all 0.3s ease-in-out;
-  border-radius: 10px;
-  margin: 5px;
-}
-.main__controls_button span {
-  margin-top: 10px;
-  display: block;
-}
-.main__controls_button:hover {
-  background-color: #34383b;
-}
-.main__controls_button i {
-  font-size: 25px;
-}
-.leaveMeeting {
-  background-color: red;
-  color: #fff;
-}
-.main__header {
-  color: #f5f5f5;
-  text-align: center;
-  padding: 20px;
-  border-bottom: 2px solid #3d3d42;
-}
-.main__chat__window {
-  flex-grow: 1;
-  overflow: auto;
-  padding: 20px 20px 0 20px;
-}
-.main__message_container {
-  padding: 22px 11px;
-  display: flex;
-}
-.main__message_container input {
-  flex-grow: 1;
-  background-color: transparent;
-  border: none;
-  color: #f5f5f5;
-  user-select: none;
-  outline: none;
+  font-family: "Google Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: #ffffff;
+  color: #202124;
+  overflow: hidden;
 }
 
-#all_messages li {
-  color: #fff;
-  list-style: none;
-  border-bottom: 1px solid #3d3d42;
-  padding: 10px 0;
+/* Header */
+.meeting-header {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e8eaed;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
 }
+
+.meeting-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.meeting-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 16px;
+  color: #202124;
+}
+
+.meeting-title i {
+  font-size: 18px;
+  color: #1a73e8;
+}
+
+.meeting-id {
+  font-size: 14px;
+  color: #5f6368;
+  background-color: #f8f9fa;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+/* Main Container */
+.main-container {
+  display: flex;
+  height: 100vh;
+  padding-top: 64px;
+  background-color: #ffffff;
+}
+
+/* Video Section */
+.video-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-height: 0; /* Ensures proper flex behavior */
+}
+
+.video-area {
+  flex: 1;
+  background-color: #202124;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  position: relative;
+}
+
+/* Video Grid */
+.video-grid {
+  display: grid;
+  gap: 8px;
+  width: 80%;
+  height: 200vh;
+  max-width: 900px;
+  max-height: 600px;
+  margin: 0 auto;
+}
+
+/* Dynamic Grid Layouts */
+.video-grid:has(video:nth-child(1):last-child) {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+
+.video-grid:has(video:nth-child(2):last-child) {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr;
+}
+
+.video-grid:has(video:nth-child(3):last-child),
+.video-grid:has(video:nth-child(4):last-child) {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+.video-grid:has(video:nth-child(5):last-child),
+.video-grid:has(video:nth-child(6):last-child) {
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+.video-grid:has(video:nth-child(n+7)) {
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+}
+
+/* Video Elements */
+video {
+  width: 100%;
+  height: 90%;
+  object-fit: contain !important;
+  border-radius: 8px;
+  background-color: #000000;
+  transform: scaleX(-1);
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Ensure consistent video sizing in desktop grid regardless of source device */
+.video-grid video {
+  width: 100% !important;
+  height: 80% !important;
+  object-fit: cover !important;
+  border-radius: 8px !important;
+  background-color: #000000 !important;
+  transform: scaleX(-1) !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Controls Bar */
+.controls-bar {
+  background-color: #ffffff;
+  border-top: 1px solid #e8eaed;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  height: 80px;
+  flex-shrink: 0; /* Prevents the controls from shrinking */
+  position: relative;
+  z-index: 10;
+}
+
+.controls-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.control-button {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background-color: #f8f9fa;
+  color: #5f6368;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 18px;
+}
+
+.control-button:hover {
+  background-color: #e8eaed;
+  color: #202124;
+}
+
+.control-button:active {
+  transform: scale(0.95);
+}
+
+.control-button.active {
+  background-color: #1a73e8;
+  color: #ffffff;
+}
+
+.leave-button {
+  background-color: #ea4335;
+  color: #ffffff;
+}
+
+.leave-button:hover {
+  background-color: #d33b2c;
+}
+
 .unmute {
-  color: red;
+  background-color: #ea4335;
+  color: #ffffff;
+}
+
+.unmute:hover {
+  background-color: #d33b2c;
+}
+
+/* Chat Panel */
+.chat-panel {
+  width: 320px;
+  background-color: #ffffff;
+  border-left: 1px solid #e8eaed;
+  display: none;
+  flex-direction: column;
+  position: relative;
+}
+
+.chat-panel.open {
+  display: flex;
+}
+
+.chat-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e8eaed;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #ffffff;
+}
+
+.chat-header h3 {
+  font-size: 16px;
+  font-weight: 500;
+  color: #202124;
+}
+
+.close-chat {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background-color: transparent;
+  color: #5f6368;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.close-chat:hover {
+  background-color: #f8f9fa;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+}
+
+.messages-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.messages-list li {
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #202124;
+  word-wrap: break-word;
+}
+
+.chat-input-container {
+  padding: 16px 20px;
+  border-top: 1px solid #e8eaed;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.chat-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #e8eaed;
+  border-radius: 20px;
+  outline: none;
+  font-size: 14px;
+  background-color: #ffffff;
+  color: #202124;
+}
+
+.chat-input:focus {
+  border-color: #1a73e8;
+}
+
+.send-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background-color: #1a73e8;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.send-button:hover {
+  background-color: #1557b0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .meeting-header {
+    padding: 8px 16px;
+    height: 56px;
+  }
+  
+  .main-container {
+    padding-top: 56px;
+    height: 100vh;
+    height: 100dvh; /* Use dynamic viewport height for better mobile support */
+    overflow: hidden;
+  }
+  
+  .video-section {
+    height: calc(100vh - 56px);
+    height: calc(100dvh - 56px); /* Account for header height */
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .video-area {
+    padding: 8px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+  
+  .meeting-info {
+    gap: 12px;
+  }
+  
+  .meeting-title {
+    font-size: 14px;
+  }
+  
+  .meeting-id {
+    font-size: 12px;
+    padding: 2px 6px;
+  }
+  
+  .video-grid {
+    gap: 4px;
+    height: auto;
+    max-height: none;
+  }
+  
+  .controls-bar {
+    padding: 12px 16px;
+    gap: 16px;
+    height: 72px;
+    flex-shrink: 0;
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
+    background-color: #ffffff;
+    border-top: 1px solid #e8eaed;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .control-button {
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
+  }
+  
+  .chat-panel {
+    width: 100%;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 200;
+  }
+  
+  /* Mobile Grid Adjustments */
+  .video-grid:has(video:nth-child(3):last-child),
+  .video-grid:has(video:nth-child(4):last-child) {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+  
+  .video-grid:has(video:nth-child(n+5)) {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .main-container {
+    height: 100vh;
+    height: 100dvh;
+  }
+  
+  .video-section {
+    height: calc(100vh - 56px);
+    height: calc(100dvh - 56px);
+  }
+  
+  .controls-bar {
+    gap: 12px;
+    padding: 8px 12px;
+    height: 64px;
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
+    background-color: #ffffff;
+    border-top: 1px solid #e8eaed;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .control-button {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+  }
+  
+  .video-grid {
+    gap: 2px;
+  }
+  
+  video {
+    border-radius: 4px;
+  }
+}
+
+/* Landscape Mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  .meeting-header {
+    height: 48px;
+    padding: 6px 12px;
+  }
+  
+  .main-container {
+    padding-top: 48px;
+    height: 100vh;
+    height: 100dvh;
+  }
+  
+  .video-section {
+    height: calc(100vh - 48px);
+    height: calc(100dvh - 48px);
+  }
+  
+  .controls-bar {
+    height: 60px;
+    padding: 8px 16px;
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
+    background-color: #ffffff;
+    border-top: 1px solid #e8eaed;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .control-button {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+}
+
+/* Mobile Video Layout */
+.mobile-video-layout {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+}
+
+/* Own camera - small frame at top right */
+.own-camera-container {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 120px;
+  height: 160px;
+  z-index: 50;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.own-camera-container video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+  transform: scaleX(-1);
+}
+
+/* Main speaker view - center large */
+.main-speaker-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #202124;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 8px;
+  position: relative;
+}
+
+.main-speaker-container video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+  transform: scaleX(-1);
+}
+
+.no-speaker-message {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #ffffff;
+  font-size: 18px;
+  text-align: center;
+}
+
+/* Other participants - horizontal scroll at bottom */
+.other-participants-container {
+  height: 100px;
+  margin-bottom: 8px;
+}
+
+.participants-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.participants-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.participant-item {
+  flex-shrink: 0;
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid #ffffff;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.participant-item:hover {
+  transform: scale(1.05);
+}
+
+.participant-item video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+  transform: scaleX(-1);
+}
+
+.participant-item .participant-name {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  right: 4px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Mobile Video Layout Redesign */
+@media screen and (max-width: 768px) {
+  /* Mobile-specific video area */
+  .video-area {
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    gap: 8px;
+    overflow: hidden;
+    height: 100%;
+  }
+  
+  /* Show mobile layout, hide desktop */
+  .mobile-video-layout {
+    display: flex !important;
+  }
+  
+  .video-grid {
+    display: none !important;
+  }
+  
+  .pagination-controls {
+    display: none !important;
+  }
+  
+  /* Ensure controls are always visible on mobile */
+  .controls-bar {
+    position: -webkit-sticky;
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background-color: #ffffff;
+    border-top: 1px solid #e8eaed;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Prevent body scroll on mobile */
+  body {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+  }
 }

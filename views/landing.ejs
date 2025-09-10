@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Landing - Video Call</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Landing page specific styles */
+    .landing-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      padding: 0 20px;
+      text-align: center;
+      background-color: #ffffff;
+      font-family: "Google Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #202124;
+    }
+    .landing-header {
+      font-size: 2.5rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+    }
+    .landing-subheader {
+      font-size: 1.2rem;
+      color: #5f6368;
+      margin-bottom: 2rem;
+    }
+    .landing-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+      width: 100%;
+      max-width: 600px;
+    }
+    .btn-new-meeting {
+      background-color: #1a73e8;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 1rem;
+      border-radius: 24px;
+      cursor: pointer;
+      flex: 1 1 150px;
+      min-width: 150px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background-color 0.3s ease;
+    }
+    .btn-new-meeting:hover {
+      background-color: #1557b0;
+    }
+    .input-join {
+      flex: 2 1 250px;
+      padding: 12px 16px;
+      font-size: 1rem;
+      border: 1px solid #e8eaed;
+      border-radius: 24px;
+      outline: none;
+      color: #202124;
+    }
+    .btn-join {
+      background-color: #f8f9fa;
+      border: 1px solid #e8eaed;
+      color: #5f6368;
+      padding: 12px 24px;
+      font-size: 1rem;
+      border-radius: 24px;
+      cursor: pointer;
+      flex: 1 1 100px;
+      min-width: 100px;
+      transition: background-color 0.3s ease;
+    }
+    .btn-join:hover {
+      background-color: #e8eaed;
+    }
+    .input-username {
+      margin-top: 2rem;
+      width: 100%;
+      max-width: 400px;
+      padding: 12px 16px;
+      font-size: 1rem;
+      border: 1px solid #e8eaed;
+      border-radius: 24px;
+      outline: none;
+      color: #202124;
+    }
+    @media (max-width: 480px) {
+      .landing-header {
+        font-size: 2rem;
+      }
+      .landing-subheader {
+        font-size: 1rem;
+      }
+      .landing-actions {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .btn-new-meeting, .btn-join, .input-join {
+        flex: 1 1 100%;
+        min-width: auto;
+      }
+      .input-username {
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="landing-container">
+    <h1 class="landing-header">Video calls and meetings for everyone</h1>
+    <p class="landing-subheader">Connect, collaborate and celebrate from anywhere with Video Call</p>
+    <div class="landing-actions">
+      <button id="newMeetingBtn" class="btn-new-meeting">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="white" height="20" viewBox="0 0 24 24" width="20"><path d="M17 10.5V6c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2v-4.5l4 4v-11l-4 4z"/></svg>
+        New meeting
+      </button>
+      <input type="text" id="joinInput" class="input-join" placeholder="Enter a code or link" />
+      <button id="joinBtn" class="btn-join">Join</button>
+    </div>
+    <input type="text" id="usernameInput" class="input-username" placeholder="Enter your name" />
+  </div>
+
+  <script>
+    // Generate UUID for new meeting
+    function generateUUID() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+
+    const newMeetingBtn = document.getElementById('newMeetingBtn');
+    const joinBtn = document.getElementById('joinBtn');
+    const joinInput = document.getElementById('joinInput');
+    const usernameInput = document.getElementById('usernameInput');
+
+    function getUsername() {
+      return usernameInput.value.trim();
+    }
+
+    newMeetingBtn.addEventListener('click', () => {
+      const username = getUsername();
+      if (!username) {
+        alert('Please enter your name before starting a new meeting.');
+        usernameInput.focus();
+        return;
+      }
+      const newRoomId = generateUUID();
+      // Store username in localStorage for later use in meeting page
+      localStorage.setItem('username', username);
+      window.location.href = `/${newRoomId}`;
+    });
+
+    joinBtn.addEventListener('click', () => {
+      const username = getUsername();
+      if (!username) {
+        alert('Please enter your name before joining a meeting.');
+        usernameInput.focus();
+        return;
+      }
+      const roomId = joinInput.value.trim();
+      if (!roomId) {
+        alert('Please enter a meeting code or link to join.');
+        joinInput.focus();
+        return;
+      }
+      localStorage.setItem('username', username);
+      // If user entered a full URL, extract the room ID from it
+      let room = roomId;
+      try {
+        const url = new URL(roomId);
+        room = url.pathname.replace('/', '');
+      } catch (e) {
+        // Not a URL, use as is
+      }
+      window.location.href = `/${room}`;
+    });
+  </script>
+</body>
+</html>
